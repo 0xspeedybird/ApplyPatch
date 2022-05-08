@@ -2,7 +2,7 @@
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace Win_1337_Patch
+namespace ApplyPatch
 {
     class mCheckSum
     {
