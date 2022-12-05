@@ -118,3 +118,9 @@ jobs:
     #  with:
     #    name: MSIX Package
     #    path: ${{ env.Wap_Project_Directory }}\AppPackages
+
+    - name: Upload artifacts for cutting release
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-artifacts
+        path: ${{ env.Wap_Project_Directory }}\AppPackages
