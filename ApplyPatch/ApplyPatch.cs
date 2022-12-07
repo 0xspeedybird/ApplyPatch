@@ -106,7 +106,7 @@ namespace ApplyPatch
             if (downloadTask.result == null || patch.parse(downloadTask.result) != Patch.NO_ERR_OK)
             {
                 MessageBox.Show(
-                    "The downloaded .1337 patch is invalid. " + patch.GetLastError,
+                    "The downloaded .1337 patch is invalid.  It must be the direct link to the file.\n\nFor example:\n\nhttps://raw.githubusercontent.com/keylase/nvidia-patch/master/win/win10_x64/512.77/nvencodeapi64.1337 \n\n" + patch.GetLastError,
                     "Download Patch Status",
                     MessageBoxButtons.OK, MessageBoxIcon.Error
                 );
