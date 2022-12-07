@@ -99,7 +99,6 @@ namespace ApplyPatch
                 return;
             }
 
-            string path = "https://raw.githubusercontent.com/keylase/nvidia-patch/master/win/win10_x64/512.77/nvencodeapi64.1337";
             var downloadTask = await DownloadPatchAsync(patchDownloadUrl);
 
             //check patch

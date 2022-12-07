@@ -153,7 +153,7 @@ namespace ApplyPatch
             this.Controls.Add(this.downloadPatchUrlTx);
             this.Controls.Add(this.downloadPatchBtn);
             this.Font = new System.Drawing.Font("Segoe UI", 8.1F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Icon = Properties.Resources.AppIcon;
             this.Margin = new System.Windows.Forms.Padding(8);
             this.MaximizeBox = false;
             this.MaximumSize = new System.Drawing.Size(1802, 1057);
