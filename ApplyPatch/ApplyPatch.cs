@@ -1,8 +1,14 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace ApplyPatch
 {
@@ -11,12 +17,14 @@ namespace ApplyPatch
     {
 
         //Custom patch settings - BEGIN
-        public const string PATCH_NAME = "[Fallout2] ExpertPackRat mod v1.0.0";
-        public const string PATCH_LINK_URL = "https://www.nexusmods.com/fallout2/mods/49";
-        public const string PATCH_OD_APP_NAME = "[Fallout2]";     //for opendialog
-        public const string PATCH_OD_EXTRA_FILE = "fallout2.exe"; //for opendialog
+        public const string PATCH_NAME = "NVidia Patcher";
+        public const string PATCH_LINK_URL = "https://github.com/keylase/nvidia-patch/tree/master/win";
+        public const string PATCH_OD_APP_NAME = "NVidia Encoder DLL";     //for opendialog
+        public const string PATCH_OD_EXTRA_FILE = "nvEncodeAPI64.dll"; //for opendialog
         private Patch patch = new Patch1337();
-        private PostProcess post = new PostProcessFallout2();
+        private static HttpClient client = new HttpClient();
+        private Boolean patchIsGood = false;
+        private Boolean nvidiaDllSelected = false;
         //Custom patch settings - END
 
         private string targetFile = String.Empty;
@@ -30,16 +38,13 @@ namespace ApplyPatch
             this.Load += new System.EventHandler(this.MainForm_Load);
 
             InitializeComponent();
-            //var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-            //string ver = version.Major + "." + version.Minor;
-            this.Text += $" {PATCH_NAME}";
             linklbl.Text = PATCH_LINK_URL;
             browserPath = getBrowserPath();
         }
         private void init()
         {
 
-            //add handlers
+            //add handlers - some already added in Designer
             this.targetFileTx.DoubleClick += new EventHandler(this.targetFileTx_DoubleClick);
             this.targetFileTx.DragDrop += new DragEventHandler(this.DragDrop);
             this.targetFileTx.DragEnter += new DragEventHandler(this.DragEnter);
@@ -49,8 +54,9 @@ namespace ApplyPatch
             this.fileSelBtn.DragDrop += new DragEventHandler(this.DragDrop);
             this.fileSelBtn.DragEnter += new DragEventHandler(this.DragEnter);
             this.linklbl.LinkClicked += new LinkLabelLinkClickedEventHandler(this.linklbl_LinkClicked);
+            this.downloadPatchUrlTx.Click += new EventHandler(this.downloadPatch_TextClicked);
+            this.downloadPatchUrlTx.Leave += new EventHandler(this.downloadPatch_Leave);
 
-            string err;
             string defaultFile;
 
             //restore backup button
@@ -58,23 +64,10 @@ namespace ApplyPatch
             if (backup is bool)
                 backupCb.Checked = (bool)backup;
 
-            //check patch
-            if (patch.parse(Resource.patch) != Patch.NO_ERR_OK)
-            {
-                MessageBox.Show(
-                    "The .1337 patch is invalid. " + patch.GetLastError, 
-                    "PatchStatus", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Error
-                );
-                Application.Exit();
-                return;
-            }
-            patchDefaultFileName = patch.DefaultFileName;
 
-            targetFileTx.Text = $"Select [{patchDefaultFileName}";
-            if (PATCH_OD_EXTRA_FILE.Length > 0)
-                targetFileTx.Text += $" | {PATCH_OD_EXTRA_FILE}";
-            targetFileTx.Text += "] for patch...";
+            patchDefaultFileName = PATCH_OD_EXTRA_FILE;
+
+            targetFileTx.Text = $"Select [{patchDefaultFileName}] for patch...";
 
             //restore from settings
             defaultFile = Properties.Settings.Default["target"].ToString().Trim();
@@ -86,7 +79,7 @@ namespace ApplyPatch
             }
 
             //try to locate in current folder
-            defaultFile = Directory.GetCurrentDirectory() + "\\" + patchDefaultFileName;
+            defaultFile = Environment.SystemDirectory + "\\" + patchDefaultFileName;
             if (setTargetFile(defaultFile).Length == 0) {
                 targetFileTx.Text = $"./{patchDefaultFileName}";
             } else if (PATCH_OD_EXTRA_FILE.Length > 0) {
@@ -95,6 +88,58 @@ namespace ApplyPatch
                     targetFileTx.Text = $"./{PATCH_OD_EXTRA_FILE}";
             }
 
+        }
+
+        private async void downloadPatchBtn_Click(object sender, EventArgs e)
+        {
+            string patchDownloadUrl = this.downloadPatchUrlTx.Text;
+            if (patchDownloadUrl.Length == 0 || !(Uri.IsWellFormedUriString(patchDownloadUrl, UriKind.Absolute)))
+            {
+                MessageBox.Show("The link you provided to the patch file is invalid.", "Patch URL", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            string path = "https://raw.githubusercontent.com/keylase/nvidia-patch/master/win/win10_x64/512.77/nvencodeapi64.1337";
+            var downloadTask = await DownloadPatchAsync(patchDownloadUrl);
+
+            //check patch
+            if (downloadTask.result == null || patch.parse(downloadTask.result) != Patch.NO_ERR_OK)
+            {
+                MessageBox.Show(
+                    "The downloaded .1337 patch is invalid. " + patch.GetLastError,
+                    "Download Patch Status",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error
+                );
+                patchIsGood = false;
+                this.patchBtn.Enabled = false;
+                return;
+            }
+            else
+            {
+                MessageBox.Show(
+                    "The downloaded .1337 patch is valid.  You can now apply the patch.",
+                    "Download Patch Status",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information
+                );
+                patchIsGood = true;
+                this.patchBtn.Enabled = true;
+            }
+        }
+
+        static async Task<DownloadPageAsyncResult> DownloadPatchAsync(string path)
+        {
+            var result = new DownloadPageAsyncResult();
+            try
+            {
+                string downloadContent = await client.GetStringAsync(path);
+                result.result = downloadContent;
+            }
+            catch (Exception ex)
+            {
+                // need to return ex.message for display.
+                result.errorMessage = ex.Message;
+            }
+            return result;
         }
 
         private string setTargetFile(string file, bool showErrMsg=false, bool isSave=false) {
@@ -118,6 +163,7 @@ namespace ApplyPatch
                         Properties.Settings.Default["target"] = targetFile;
                         Properties.Settings.Default.Save();
                     }
+                    this.downloadPatchBtn.Enabled = true;
                     return string.Empty; //all ok
                 } else {
                     err = patch.GetLastError;
@@ -128,11 +174,13 @@ namespace ApplyPatch
                 MessageBox.Show(err, "TargetFile", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
+            this.downloadPatchBtn.Enabled = false;
+
             return err;
         }
 
         private string createFilterForOd(string file) {
-            return $"{PATCH_OD_APP_NAME} {Path.GetExtension(file)}|{Path.GetFileName(file)}";
+            return $"{PATCH_OD_APP_NAME}|{Path.GetFileName(file)}";
         }
 
         private void openFileBrowser()
@@ -141,12 +189,7 @@ namespace ApplyPatch
             string ext = Path.GetExtension(patchDefaultFileName);
 
             dlgFile.Filter = createFilterForOd(patchDefaultFileName);
-
-            if (PATCH_OD_EXTRA_FILE.Length > 0)
-                dlgFile.Filter += "|" + createFilterForOd(PATCH_OD_EXTRA_FILE);
-
-            dlgFile.Filter += $"|{PATCH_OD_APP_NAME} {ext}|*{ext}";
-
+            dlgFile.InitialDirectory = Environment.SystemDirectory;
             dlgFile.Title = $"Select file for {PATCH_OD_APP_NAME}...";
             dlgFile.RestoreDirectory = true;
 
@@ -219,18 +262,36 @@ namespace ApplyPatch
 
             if (patch.apply(targetFile, backupCb.Checked) == Patch.NO_ERR_OK) {
                 MessageBox.Show("File Patching success!", "PatchApply status", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                //run postprocess
-                post.run(targetFile);
-
             } else {
                 MessageBox.Show($"Patch apply on file failed.\nError: {patch.GetLastError}", "PatchApply", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        private void backupCb_CheckedChanged(object sender, EventArgs e) {
+        private void backupCb_CheckedChanged(object sender, EventArgs e)
+        {
             Properties.Settings.Default["backup"] = backupCb.Checked;
             Properties.Settings.Default.Save();
+        }
+        private void downloadPatch_TextChanged(object sender, EventArgs e)
+        {
+            patchIsGood = false;
+            this.patchBtn.Enabled = false;
+        }
+
+        private void downloadPatch_TextClicked(object sender, EventArgs e)
+        {
+            if (downloadPatchUrlTx.Text.Equals(DefaultDownloadPatchUrlTx))
+            {
+                downloadPatchUrlTx.Clear();
+            }
+        }
+
+        private void downloadPatch_Leave(object sender, EventArgs e)
+        {
+            if (String.IsNullOrWhiteSpace(downloadPatchUrlTx.Text))
+            {
+                downloadPatchUrlTx.Text = DefaultDownloadPatchUrlTx;
+            }
         }
 
         private void fileSelBtn_Click(object sender, EventArgs e) {
@@ -253,5 +314,54 @@ namespace ApplyPatch
             openURLinDefaultBrowser(linklbl.Text);
         }
 
+        private void MainForm_Load_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void linklbl_LinkClicked_1(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+
+        }
+
+        private void patchBtn_Click_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void targetFileTx_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void fileLbl_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void backupCb_CheckedChanged_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void fileLbl_Click_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void backupCb_CheckedChanged_2(object sender, EventArgs e)
+        {
+
+        }
+
+        private void linklbl_LinkClicked_2(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+
+        }
+
+        private void fileSelBtn_Click_1(object sender, EventArgs e)
+        {
+
+        }
     }
 }
