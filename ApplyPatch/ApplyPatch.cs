@@ -124,17 +124,25 @@ namespace ApplyPatch
                         string osMajorVersion = osVersion.Substring(0, osVersion.IndexOf("."));
                         string friendlyOSversion = !String.IsNullOrEmpty(osVersion) ? "Windows " + osMajorVersion : "Unknown OS";
 
+                        //map win version to keylase paths
+                        //map Win 8 and 8.1 -> Win 7
+                        if(osMajorVersion.Equals("8") || osMajorVersion.Equals("8.1")){ osMajorVersion = "7"; }
+                        //map Win 11 -> Win 10
+                        if (osMajorVersion.Equals("11")) { osMajorVersion = "7"; }
+
                         //win reports NVidia driver differently than NVidia's Control Panel.  We need the latter
                         //For ex:  30.0.15.1277 vs  512.77
+                        string deviceName = (string)obj["DeviceName"];
                         string winReportedNVidiaDriver = (string)obj["DriverVersion"];
                         string mappedNVidiaDriverVersion = winReportedNVidiaDriver.Replace(".", "");
                         mappedNVidiaDriverVersion = mappedNVidiaDriverVersion.Substring(4).Insert(3, ".");
 
-                        string info = String.Format("GPU Card: {0}\n\nWindows ReportedDriver Version: {1}\n\nMapped Driver Version: {2}\n\nManufacturer:{3}", obj["DeviceName"], obj["DriverVersion"], mappedNVidiaDriverVersion, obj["Manufacturer"]);
+                        string info = String.Format("GPU Card: {0}\n\nWindows Reported Driver Version: {1}\n\nMapped Driver Version: {2}\n\nManufacturer:{3}", deviceName, obj["DriverVersion"], mappedNVidiaDriverVersion, obj["Manufacturer"]);
                         this.driverlbl.Text = friendlyOSversion + "\n\n" + info;
 
                         //now let's update the link for the user
-                        string keylaseFinalUrl = String.Format("{0}/win{1}_x64/{2}/nvencodeapi64.1337", RAW_PATCH_LINK_URL, osMajorVersion, mappedNVidiaDriverVersion);
+                        string keylaseFinalUrl = String.Format("{0}/win{1}_x64/{2}/nvencodeapi64.1337", RAW_PATCH_LINK_URL, osMajorVersion,
+                            (deviceName.IndexOf("Quadro")!=-1?"quadro_":"") + mappedNVidiaDriverVersion);
                         this.downloadPatchUrlTx.Text = keylaseFinalUrl;
 
                         return true;
