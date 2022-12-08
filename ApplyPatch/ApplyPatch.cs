@@ -130,7 +130,7 @@ namespace ApplyPatch
                         string mappedNVidiaDriverVersion = winReportedNVidiaDriver.Replace(".", "");
                         mappedNVidiaDriverVersion = mappedNVidiaDriverVersion.Substring(4).Insert(3, ".");
 
-                        string info = String.Format("GPU Card: {0}\n\nWindows ReportedDriver Version: {1}\n\nMapped Driver Version: {2}\n\nManufacturer:{3}", obj["DeviceName"], mappedNVidiaDriverVersion, obj["DriverVersion"], obj["Manufacturer"]);
+                        string info = String.Format("GPU Card: {0}\n\nWindows ReportedDriver Version: {1}\n\nMapped Driver Version: {2}\n\nManufacturer:{3}", obj["DeviceName"], obj["DriverVersion"], mappedNVidiaDriverVersion, obj["Manufacturer"]);
                         this.driverlbl.Text = friendlyOSversion + "\n\n" + info;
 
                         //now let's update the link for the user
@@ -373,56 +373,11 @@ namespace ApplyPatch
             openURLinDefaultBrowser(target);
         }
 
-        private void MainForm_Load_1(object sender, EventArgs e)
-        {
-
-        }
-
-        private void linklbl_LinkClicked_1(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-
-        }
-
         private void helpBtn_Click(object sender, EventArgs e)
         {
             MessageBox.Show(Resource.PatchInstructions,"Instructions",
                     MessageBoxButtons.OK, MessageBoxIcon.Information
                 );
-        }
-
-        private void targetFileTx_TextChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void fileLbl_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void backupCb_CheckedChanged_1(object sender, EventArgs e)
-        {
-
-        }
-
-        private void fileLbl_Click_1(object sender, EventArgs e)
-        {
-
-        }
-
-        private void backupCb_CheckedChanged_2(object sender, EventArgs e)
-        {
-
-        }
-
-        private void linklbl_LinkClicked_2(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-
-        }
-
-        private void fileSelBtn_Click_1(object sender, EventArgs e)
-        {
-
         }
     }
 }

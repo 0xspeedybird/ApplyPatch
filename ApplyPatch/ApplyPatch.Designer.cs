@@ -51,7 +51,6 @@ namespace ApplyPatch
             this.targetFileTx.TabStop = false;
             this.targetFileTx.Text = "Select a path to the NVidia DLL";
             this.targetFileTx.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.targetFileTx.TextChanged += new System.EventHandler(this.targetFileTx_TextChanged);
             // 
             // patchBtn
             // 
@@ -123,7 +122,6 @@ namespace ApplyPatch
             this.fileSelBtn.TabIndex = 78;
             this.fileSelBtn.Text = "1) Browse for NVidia DLL";
             this.fileSelBtn.UseVisualStyleBackColor = true;
-            this.fileSelBtn.Click += new System.EventHandler(this.fileSelBtn_Click_1);
             // 
             // backupCb
             // 
@@ -139,7 +137,6 @@ namespace ApplyPatch
             this.backupCb.TabIndex = 81;
             this.backupCb.Text = "Backup Existing Driver DLL";
             this.backupCb.UseVisualStyleBackColor = true;
-            this.backupCb.CheckedChanged += new System.EventHandler(this.backupCb_CheckedChanged_2);
             // 
             // linklbl
             // 
@@ -206,7 +203,6 @@ namespace ApplyPatch
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "NVidia Patcher - Enables Transcoder on Consumer GPU";
-            this.Load += new System.EventHandler(this.MainForm_Load_1);
             this.ResumeLayout(false);
             this.PerformLayout();
 

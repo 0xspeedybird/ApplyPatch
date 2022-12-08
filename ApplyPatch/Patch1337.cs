@@ -5,7 +5,7 @@ namespace ApplyPatch
     class Patch1337 : PatchBytes
     {
 
-        private const int FILEOFFSET = 0xC00; //0xFC00
+        private const int FILEOFFSET = 0xC00;
 
         public override int parse(string content)
         {

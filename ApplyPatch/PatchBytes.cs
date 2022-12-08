@@ -73,7 +73,7 @@ namespace ApplyPatch
                 }
             
             if (!ok) {
-                GetLastError = "Error!\nFile was already patched!";
+                GetLastError = "File was already patched!";
                 return ERR_CHECK_ALREADY;
             }
 
