@@ -121,4 +121,24 @@
   <data name="AppIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>app.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="PatchInstructions" xml:space="preserve">
+    <value>Instruction for Using this tool:
+
+This tool will attempt to automatically find your driver and the patch.  If it does, you can review the values entered for the driver location (NVidia DLL) and the patch URL.  If it looks good, you can simply click the Apply Patch button.  
+
+Steps to patch:
+
+Any incomplete step will disable the subsequent steps.
+
+1) Browse for Nvidia DLL
+a. This can usually be found here: C:\Windows\System32\nvEncodeAPI64.dll
+
+2) Download Patch 
+a. Find your driver version by opening the Nvidia Control Panel.
+b. Go to https://github.com/keylase/nvidia-patch/tree/master/win, press ctrl+F to open a search, and search for your driver version. 
+c. Right click on the corresponding library patch, click copy link address and paste that into the URL field.
+d. Click Download Patch
+
+3) Click Apply Patch if the previous steps completed.</value>
+  </data>
 </root>

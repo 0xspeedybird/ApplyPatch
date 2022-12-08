@@ -69,5 +69,26 @@ namespace ApplyPatch {
                 return ((System.Drawing.Icon)(obj));
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Instruction for Using this tool:
+        ///
+        ///This tool will attempt to automatically find your driver and the patch.  If it does, you can review the values entered for the driver location (NVidia DLL) and the patch URL.  If it looks good, you can simply click the Apply Patch button.  
+        ///
+        ///Steps to patch:
+        ///
+        ///Any incomplete step will disable the subsequent steps.
+        ///
+        ///1) Browse for Nvidia DLL
+        ///a. This can usually be found here: C:\Windows\System32\nvEncodeAPI64.dll
+        ///
+        ///2) Download Patch 
+        ///a. Find your driver version by op [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string PatchInstructions {
+            get {
+                return ResourceManager.GetString("PatchInstructions", resourceCulture);
+            }
+        }
     }
 }

@@ -32,6 +32,9 @@ namespace ApplyPatch
             this.fileSelBtn = new System.Windows.Forms.Button();
             this.backupCb = new System.Windows.Forms.CheckBox();
             this.linklbl = new System.Windows.Forms.LinkLabel();
+            this.ytlinklbl = new System.Windows.Forms.LinkLabel();
+            this.driverlbl = new System.Windows.Forms.Label();
+            this.helpBtn = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // targetFileTx
@@ -64,7 +67,18 @@ namespace ApplyPatch
             this.patchBtn.Enabled = false;
             this.patchBtn.Text = "3) Apply Patch";
             this.patchBtn.UseVisualStyleBackColor = true;
-            this.patchBtn.Click += new System.EventHandler(this.patchBtn_Click_1);
+            // 
+            // helpBtn
+            // 
+            this.helpBtn.Location = new System.Drawing.Point(47, 350);
+            this.helpBtn.Margin = new System.Windows.Forms.Padding(8);
+            this.helpBtn.Font = new System.Drawing.Font("Segoe UI", 8.1F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.helpBtn.Name = "helpBtn";
+            this.helpBtn.Size = new System.Drawing.Size(150, 23);
+            this.helpBtn.TabIndex = 88;
+            this.helpBtn.Text = "Show Instructions";
+            this.helpBtn.UseVisualStyleBackColor = true;
+            this.helpBtn.Click += new System.EventHandler(this.helpBtn_Click);
             // 
             // downloadPatchUrlTx
             // 
@@ -130,34 +144,65 @@ namespace ApplyPatch
             // linklbl
             // 
             this.linklbl.AutoSize = true;
-            this.linklbl.Location = new System.Drawing.Point(47, 120);
-            this.linklbl.Margin = new System.Windows.Forms.Padding(0);
+            this.linklbl.Location = new System.Drawing.Point(47, 280);
             this.linklbl.Name = "linklbl";
             this.linklbl.Size = new System.Drawing.Size(239, 38);
             this.linklbl.TabIndex = 82;
             this.linklbl.TabStop = true;
-            this.linklbl.Text = "http://about:blank";
-            this.linklbl.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linklbl_LinkClicked_2);
+            this.linklbl.Text = "Patch Project Link";
+            this.linklbl.Links.Add(0, this.linklbl.Text.Length, PATCH_PROJECT_LINK_URL);
+            this.linklbl.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linklbl_LinkClicked);
+
+            // 
+            // YT Video Link
+            // https://youtu.be/0fxu7zbhmrs?t=122
+            this.ytlinklbl.AutoSize = true;
+            this.ytlinklbl.Location = new System.Drawing.Point(47, 300);
+            this.ytlinklbl.Name = "ytlinklbl";
+            this.ytlinklbl.Size = new System.Drawing.Size(239, 38);
+            this.ytlinklbl.TabIndex = 82;
+            this.ytlinklbl.TabStop = true;
+            this.ytlinklbl.Text = "Video Overview of Patch Project";
+            this.ytlinklbl.Links.Add(0, this.ytlinklbl.Text.Length, "https://youtu.be/0fxu7zbhmrs?t=122");
+            this.ytlinklbl.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linklbl_LinkClicked);
+
+
+            // 
+            // Driver Info Label
+            // 
+            //.driverlbl.AutoSize = true;
+            this.driverlbl.Location = new System.Drawing.Point(47, 120);
+            this.driverlbl.Margin = new System.Windows.Forms.Padding(0);
+            this.driverlbl.Name = "driverlbl";
+            this.driverlbl.Size = new System.Drawing.Size(400, 150);
+            this.driverlbl.Text = "Unable to locate Display Driver";
+            this.driverlbl.BackColor = System.Drawing.SystemColors.HighlightText;
+            this.driverlbl.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.driverlbl.Padding = new System.Windows.Forms.Padding(10);
+
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Control;
-            this.ClientSize = new System.Drawing.Size(500, 150);
+            this.ClientSize = new System.Drawing.Size(500, 420);
             this.Controls.Add(this.linklbl);
+            this.Controls.Add(this.ytlinklbl);
             this.Controls.Add(this.backupCb);
             this.Controls.Add(this.fileSelBtn);
             this.Controls.Add(this.patchBtn);
             this.Controls.Add(this.targetFileTx);
             this.Controls.Add(this.downloadPatchUrlTx);
             this.Controls.Add(this.downloadPatchBtn);
+            this.Controls.Add(this.driverlbl);
+            this.Controls.Add(this.helpBtn);
             this.Font = new System.Drawing.Font("Segoe UI", 8.1F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Icon = Properties.Resources.AppIcon;
             this.Margin = new System.Windows.Forms.Padding(8);
             this.MaximizeBox = false;
             this.MaximumSize = new System.Drawing.Size(1802, 1057);
-            this.MinimumSize = new System.Drawing.Size(448, 122);
+            this.MinimumSize = new System.Drawing.Size(500, 320);
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "NVidia Patcher - Enables Transcoder on Consumer GPU";
@@ -172,11 +217,15 @@ namespace ApplyPatch
         private System.Windows.Forms.Button patchBtn;
         private System.Windows.Forms.TextBox downloadPatchUrlTx;
         private System.Windows.Forms.Button downloadPatchBtn;
-        
+        private System.Windows.Forms.Button helpBtn;
+
         private System.Windows.Forms.ToolTip toolTip1;
         private System.Windows.Forms.Button fileSelBtn;
         private System.Windows.Forms.CheckBox backupCb;
         private System.Windows.Forms.LinkLabel linklbl;
+        private System.Windows.Forms.LinkLabel ytlinklbl;
+        private System.Windows.Forms.Label driverlbl;
+        
     }
 }
 

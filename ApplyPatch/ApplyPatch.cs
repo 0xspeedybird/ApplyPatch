@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Management;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -18,7 +20,8 @@ namespace ApplyPatch
 
         //Custom patch settings - BEGIN
         public const string PATCH_NAME = "NVidia Patcher";
-        public const string PATCH_LINK_URL = "https://github.com/keylase/nvidia-patch/tree/master/win";
+        public const string PATCH_PROJECT_LINK_URL = "https://github.com/keylase/nvidia-patch/tree/master/win";
+        public const string RAW_PATCH_LINK_URL = "https://raw.githubusercontent.com/keylase/nvidia-patch/master/win";
         public const string PATCH_OD_APP_NAME = "NVidia Encoder DLL";     //for opendialog
         public const string PATCH_OD_EXTRA_FILE = "nvEncodeAPI64.dll"; //for opendialog
         private Patch patch = new Patch1337();
@@ -37,8 +40,12 @@ namespace ApplyPatch
             //add handler
             this.Load += new System.EventHandler(this.MainForm_Load);
 
+            bool is64bit = Environment.Is64BitOperatingSystem;
+            if (!is64bit){
+                MessageBox.Show("This tool only runs on 64-bit versions of Windows.  Sorry.", "Unsupported Architecture", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Environment.Exit(0);
+            }
             InitializeComponent();
-            linklbl.Text = PATCH_LINK_URL;
             browserPath = getBrowserPath();
         }
         private void init()
@@ -53,9 +60,9 @@ namespace ApplyPatch
             this.fileSelBtn.Click += new EventHandler(this.fileSelBtn_Click);
             this.fileSelBtn.DragDrop += new DragEventHandler(this.DragDrop);
             this.fileSelBtn.DragEnter += new DragEventHandler(this.DragEnter);
-            this.linklbl.LinkClicked += new LinkLabelLinkClickedEventHandler(this.linklbl_LinkClicked);
             this.downloadPatchUrlTx.Click += new EventHandler(this.downloadPatch_TextClicked);
             this.downloadPatchUrlTx.Leave += new EventHandler(this.downloadPatch_Leave);
+            this.Shown += new EventHandler(this.MainForm_Shown);
 
             string defaultFile;
 
@@ -64,6 +71,7 @@ namespace ApplyPatch
             if (backup is bool)
                 backupCb.Checked = (bool)backup;
 
+            attemptPatchRetrieval();
 
             patchDefaultFileName = PATCH_OD_EXTRA_FILE;
 
@@ -89,6 +97,57 @@ namespace ApplyPatch
             }
 
         }
+        private void MainForm_Shown(Object sender, EventArgs e)
+        {
+            //now that the form is loaded, let's try and do all the work for the user.
+            Boolean success = attemptPatchRetrieval();
+            if (success) {
+                this.downloadPatchBtn.PerformClick();
+            }
+        }
+
+        private Boolean attemptPatchRetrieval()
+        {
+
+            // video drivers -> 4d36e968-e325-11ce-bfc1-08002be10318
+            ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver WHERE Manufacturer = 'NVIDIA' and ClassGuid = '{4d36e968-e325-11ce-bfc1-08002be10318}'");
+            ManagementObjectCollection objCollection = objSearcher.Get();
+            foreach (ManagementObject obj in objCollection.Cast<ManagementObject>())
+            {
+                string m = (string)obj["Manufacturer"];
+                if (m != null)
+                {
+                    try
+                    {
+                        string osVersion = (string)(from x in new ManagementObjectSearcher("SELECT Version FROM Win32_OperatingSystem").Get().Cast<ManagementObject>()
+                                                    select x.GetPropertyValue("Version")).FirstOrDefault();
+                        string osMajorVersion = osVersion.Substring(0, osVersion.IndexOf("."));
+                        string friendlyOSversion = !String.IsNullOrEmpty(osVersion) ? "Windows " + osMajorVersion : "Unknown OS";
+
+                        //win reports NVidia driver differently than NVidia's Control Panel.  We need the latter
+                        //For ex:  30.0.15.1277 vs  512.77
+                        string winReportedNVidiaDriver = (string)obj["DriverVersion"];
+                        string mappedNVidiaDriverVersion = winReportedNVidiaDriver.Replace(".", "");
+                        mappedNVidiaDriverVersion = mappedNVidiaDriverVersion.Substring(4).Insert(3, ".");
+
+                        string info = String.Format("GPU Card: {0}\n\nWindows ReportedDriver Version: {1}\n\nMapped Driver Version: {2}\n\nManufacturer:{3}", obj["DeviceName"], mappedNVidiaDriverVersion, obj["DriverVersion"], obj["Manufacturer"]);
+                        this.driverlbl.Text = friendlyOSversion + "\n\n" + info;
+
+                        //now let's update the link for the user
+                        string keylaseFinalUrl = String.Format("{0}/win{1}_x64/{2}/nvencodeapi64.1337", RAW_PATCH_LINK_URL, osMajorVersion, mappedNVidiaDriverVersion);
+                        this.downloadPatchUrlTx.Text = keylaseFinalUrl;
+
+                        return true;
+                    }
+                    catch (Exception e)
+                    {
+                        _ = MessageBox.Show("An error occured while detecting your GPU: \n\n" + e.Message, "GPU Detection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+            return false;
+        }
+
 
         private async void downloadPatchBtn_Click(object sender, EventArgs e)
         {
@@ -198,10 +257,7 @@ namespace ApplyPatch
 
         private void openURLinDefaultBrowser(string url) {
             try {
-                Process process = new Process();
-                process.StartInfo = new ProcessStartInfo(browserPath);
-                process.StartInfo.Arguments = url;
-                process.Start();
+                System.Diagnostics.Process.Start(url);
             } catch (Exception e) {
 #if (DEBUG)
                 Console.Write(e);
@@ -310,7 +366,11 @@ namespace ApplyPatch
         }
 
         private void linklbl_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e) {
-            openURLinDefaultBrowser(linklbl.Text);
+
+            // Display the appropriate link based on the value of the 
+            // LinkData property of the Link object.
+            string target = e.Link.LinkData as string;
+            openURLinDefaultBrowser(target);
         }
 
         private void MainForm_Load_1(object sender, EventArgs e)
@@ -323,9 +383,11 @@ namespace ApplyPatch
 
         }
 
-        private void patchBtn_Click_1(object sender, EventArgs e)
+        private void helpBtn_Click(object sender, EventArgs e)
         {
-
+            MessageBox.Show(Resource.PatchInstructions,"Instructions",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information
+                );
         }
 
         private void targetFileTx_TextChanged(object sender, EventArgs e)
