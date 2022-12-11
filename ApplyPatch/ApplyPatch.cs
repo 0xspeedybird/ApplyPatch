@@ -172,7 +172,7 @@ namespace ApplyPatch
             if (downloadTask.result == null || patch.parse(downloadTask.result) != Patch.NO_ERR_OK)
             {
                 MessageBox.Show(
-                    String.Format("The downloaded .1337 patch is invalid.  It must be the direct link to the file.\n\nYou entered:\n\n{0}\n\nHere's a example of a valid URL:\n\nhttps://raw.githubusercontent.com/keylase/nvidia-patch/master/win/win10_x64/512.77/nvencodeapi64.1337 \n\n{1}", patchDownloadUrl, patch.GetLastError),
+                    String.Format("The downloaded .1337 patch is invalid.  You may to review which driver versions are supported by the keylase project as your currently installed version may not be supported.  Note that the driver patch link must be the direct link to the RAW file.\n\nYou entered:\n\n{0}\n\nHere's a example of a valid URL:\n\nhttps://raw.githubusercontent.com/keylase/nvidia-patch/master/win/win10_x64/512.77/nvencodeapi64.1337 \n\n{1}", patchDownloadUrl, patch.GetLastError),
                     "Download Patch Status",
                     MessageBoxButtons.OK, MessageBoxIcon.Error
                 );
