@@ -21,28 +21,30 @@ namespace ApplyPatch
         //Custom patch settings - BEGIN
         public const string PATCH_NAME = "NVidia Patcher";
         public const string PATCH_PROJECT_LINK_URL = "https://github.com/keylase/nvidia-patch/tree/master/win";
-        public const string RAW_PATCH_LINK_URL = "https://raw.githubusercontent.com/keylase/nvidia-patch/master/win";
-        public const string PATCH_OD_APP_NAME = "NVidia Encoder DLL";     //for opendialog
-        public const string PATCH_OD_EXTRA_FILE = "nvEncodeAPI64.dll"; //for opendialog
+        public const string PATCH_APP_NAME = "NVidia Encoder DLL";     //for opendialog
+        public const string PATCH_FILE_NAME = "nvEncodeAPI64.dll"; //for opendialog
         private Patch patch = new Patch1337();
-        private static HttpClient client = new HttpClient();
-        private Boolean patchIsGood = false;
-        private Boolean nvidiaDllSelected = false;
+        private bool patchIsGood = false;
         //Custom patch settings - END
 
         private string targetFile = String.Empty;
-        private string patchDefaultFileName;
 
         string browserPath;
 
         public MainForm()
         {
+
+            if (Program.runSilently)
+            {
+                this.ShowInTaskbar = false;
+                this.Opacity = 0;
+            }
             //add handler
             this.Load += new System.EventHandler(this.MainForm_Load);
 
             bool is64bit = Environment.Is64BitOperatingSystem;
             if (!is64bit){
-                MessageBox.Show("This tool only runs on 64-bit versions of Windows.  Sorry.", "Unsupported Architecture", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CallMessageBox("This tool only runs on 64-bit versions of Windows.  Sorry.", "Unsupported Architecture", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Environment.Exit(0);
             }
             InitializeComponent();
@@ -64,96 +66,45 @@ namespace ApplyPatch
             this.downloadPatchUrlTx.Leave += new EventHandler(this.downloadPatch_Leave);
             this.Shown += new EventHandler(this.MainForm_Shown);
 
-            string defaultFile;
-
             //restore backup button
             object backup = Properties.Settings.Default["backup"];
             if (backup is bool)
                 backupCb.Checked = (bool)backup;
 
-            attemptPatchRetrieval();
 
-            patchDefaultFileName = PATCH_OD_EXTRA_FILE;
+            this.driverlbl.Text = PatchHelper.getSystemSummary();
+            this.downloadPatchUrlTx.Text = PatchHelper.getPatchURL();
 
-            targetFileTx.Text = $"Select [{patchDefaultFileName}] for patch...";
-
-            //restore from settings
-            defaultFile = Properties.Settings.Default["target"].ToString().Trim();
-            if (setTargetFile(defaultFile).Length == 0) {
-                return;
-            } else {
-                Properties.Settings.Default["target"] = "";
-                Properties.Settings.Default.Save();
-            }
-
-            //try to locate in current folder
-            defaultFile = Environment.SystemDirectory + "\\" + patchDefaultFileName;
-            if (setTargetFile(defaultFile).Length == 0) {
-                targetFileTx.Text = $"./{patchDefaultFileName}";
-            } else if (PATCH_OD_EXTRA_FILE.Length > 0) {
-                defaultFile = Directory.GetCurrentDirectory() + "\\" + PATCH_OD_EXTRA_FILE;
-                if (setTargetFile(defaultFile).Length == 0)
-                    targetFileTx.Text = $"./{PATCH_OD_EXTRA_FILE}";
-            }
+            setDefaultFile();
 
         }
+
+        public void setDefaultFile()
+        {
+
+            targetFileTx.Text = $"Select [{PATCH_FILE_NAME}] for patch...";
+            string targetFile = setTargetFile(Environment.SystemDirectory + "\\" + PATCH_FILE_NAME);
+            if (!String.IsNullOrEmpty(targetFile))
+            {
+                targetFileTx.Text = $"./{PATCH_FILE_NAME}";
+            }
+        }
+
         private void MainForm_Shown(Object sender, EventArgs e)
         {
             //now that the form is loaded, let's try and do all the work for the user.
-            Boolean success = attemptPatchRetrieval();
-            if (success) {
-                this.downloadPatchBtn.PerformClick();
-            }
-        }
-
-        private Boolean attemptPatchRetrieval()
-        {
-
-            // video drivers -> 4d36e968-e325-11ce-bfc1-08002be10318
-            ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver WHERE Manufacturer = 'NVIDIA' and ClassGuid = '{4d36e968-e325-11ce-bfc1-08002be10318}'");
-            ManagementObjectCollection objCollection = objSearcher.Get();
-            foreach (ManagementObject obj in objCollection.Cast<ManagementObject>())
+            string systemInfo = PatchHelper.getSystemSummary();
+            if (!String.IsNullOrEmpty(systemInfo))
             {
-                string m = (string)obj["Manufacturer"];
-                if (m != null)
+                this.driverlbl.Text = systemInfo;
+
+                string patchURL = PatchHelper.getPatchURL();
+                if (!String.IsNullOrEmpty(patchURL))
                 {
-                    try
-                    {
-                        string osVersion = (string)(from x in new ManagementObjectSearcher("SELECT Version FROM Win32_OperatingSystem").Get().Cast<ManagementObject>()
-                                                    select x.GetPropertyValue("Version")).FirstOrDefault();
-                        string osMajorVersion = osVersion.Substring(0, osVersion.IndexOf("."));
-                        string friendlyOSversion = !String.IsNullOrEmpty(osVersion) ? "Windows " + osMajorVersion : "Unknown OS";
-
-                        //map win version to keylase paths
-                        //map Win 8 and 8.1 -> Win 7
-                        if(osMajorVersion.Equals("8") || osMajorVersion.Equals("8.1")){ osMajorVersion = "7"; }
-                        //map Win 11 -> Win 10
-                        if (osMajorVersion.Equals("11")) { osMajorVersion = "7"; }
-
-                        //win reports NVidia driver differently than NVidia's Control Panel.  We need the latter
-                        //For ex:  30.0.15.1277 vs  512.77
-                        string deviceName = (string)obj["DeviceName"];
-                        string winReportedNVidiaDriver = (string)obj["DriverVersion"];
-                        string mappedNVidiaDriverVersion = winReportedNVidiaDriver.Replace(".", "");
-                        mappedNVidiaDriverVersion = mappedNVidiaDriverVersion.Substring(4).Insert(3, ".");
-
-                        string info = String.Format("GPU Card: {0}\n\nWindows Reported Driver Version: {1}\n\nMapped Driver Version: {2}\n\nManufacturer:{3}", deviceName, obj["DriverVersion"], mappedNVidiaDriverVersion, obj["Manufacturer"]);
-                        this.driverlbl.Text = friendlyOSversion + "\n\n" + info;
-
-                        //now let's update the link for the user
-                        string keylaseFinalUrl = String.Format("{0}/win{1}_x64/{2}/nvencodeapi64.1337", RAW_PATCH_LINK_URL, osMajorVersion,
-                            (deviceName.IndexOf("Quadro")!=-1?"quadro_":"") + mappedNVidiaDriverVersion);
-                        this.downloadPatchUrlTx.Text = keylaseFinalUrl;
-
-                        return true;
-                    }
-                    catch (Exception e)
-                    {
-                        _ = MessageBox.Show("An error occured while detecting your GPU: \n\n" + e.Message, "GPU Detection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
+                    this.downloadPatchBtn.PerformClick();
+                    this.downloadPatchUrlTx.Text = patchURL;
                 }
             }
-            return false;
         }
 
 
@@ -162,50 +113,32 @@ namespace ApplyPatch
             string patchDownloadUrl = this.downloadPatchUrlTx.Text;
             if (patchDownloadUrl.Length == 0 || !(Uri.IsWellFormedUriString(patchDownloadUrl, UriKind.Absolute)))
             {
-                MessageBox.Show("The link you provided to the patch file is invalid.", "Patch URL", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CallMessageBox("The link you provided to the patch file is invalid.", "Patch URL", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
-            var downloadTask = await DownloadPatchAsync(patchDownloadUrl);
+            var downloadTask = await PatchHelper.DownloadPatchAsync(patchDownloadUrl);
 
             //check patch
-            if (downloadTask.result == null || patch.parse(downloadTask.result) != Patch.NO_ERR_OK)
+            if (downloadTask.result == null || parsePatch(downloadTask.result) != Patch.NO_ERR_OK)
             {
-                MessageBox.Show(
+                CallMessageBox(
                     String.Format("The downloaded .1337 patch is invalid.  You may to review which driver versions are supported by the keylase project as your currently installed version may not be supported.  Note that the driver patch link must be the direct link to the RAW file.\n\nYou entered:\n\n{0}\n\nHere's a example of a valid URL:\n\nhttps://raw.githubusercontent.com/keylase/nvidia-patch/master/win/win10_x64/512.77/nvencodeapi64.1337 \n\n{1}", patchDownloadUrl, patch.GetLastError),
                     "Download Patch Status",
                     MessageBoxButtons.OK, MessageBoxIcon.Error
                 );
-                patchIsGood = false;
                 this.patchBtn.Enabled = false;
                 return;
             }
             else
             {
-                MessageBox.Show(
+                CallMessageBox(
                     "The downloaded .1337 patch is valid.  You can now apply the patch.",
                     "Download Patch Status",
                     MessageBoxButtons.OK, MessageBoxIcon.Information
                 );
-                patchIsGood = true;
                 this.patchBtn.Enabled = true;
             }
-        }
-
-        static async Task<DownloadPageAsyncResult> DownloadPatchAsync(string path)
-        {
-            var result = new DownloadPageAsyncResult();
-            try
-            {
-                string downloadContent = await client.GetStringAsync(path);
-                result.result = downloadContent;
-            }
-            catch (Exception ex)
-            {
-                // need to return ex.message for display.
-                result.errorMessage = ex.Message;
-            }
-            return result;
         }
 
         private string setTargetFile(string file, bool showErrMsg=false, bool isSave=false) {
@@ -237,7 +170,7 @@ namespace ApplyPatch
             }
 
             if (showErrMsg) {
-                MessageBox.Show(err, "TargetFile", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CallMessageBox(err, "TargetFile", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
             this.downloadPatchBtn.Enabled = false;
@@ -246,17 +179,17 @@ namespace ApplyPatch
         }
 
         private string createFilterForOd(string file) {
-            return $"{PATCH_OD_APP_NAME}|{Path.GetFileName(file)}";
+            return $"{PATCH_APP_NAME}|{Path.GetFileName(file)}";
         }
 
         private void openFileBrowser()
         {
             OpenFileDialog dlgFile = new OpenFileDialog();
-            string ext = Path.GetExtension(patchDefaultFileName);
+            string ext = Path.GetExtension(PATCH_FILE_NAME);
 
-            dlgFile.Filter = createFilterForOd(patchDefaultFileName);
+            dlgFile.Filter = createFilterForOd(PATCH_FILE_NAME);
             dlgFile.InitialDirectory = Environment.SystemDirectory;
-            dlgFile.Title = $"Select file for {PATCH_OD_APP_NAME}...";
+            dlgFile.Title = $"Select file for {PATCH_APP_NAME}...";
             dlgFile.RestoreDirectory = true;
 
             if (dlgFile.ShowDialog() == DialogResult.OK)
@@ -306,27 +239,53 @@ namespace ApplyPatch
             init();
         }
 
+        private void CallMessageBox(string text, string caption, MessageBoxButtons buttons, MessageBoxIcon icon)
+        {
+            CallMessageBox(text, caption, buttons, icon, MessageBoxDefaultButton.Button1, (MessageBoxOptions)0);
+        }
+
+        private void CallMessageBox(string text, string caption, MessageBoxButtons buttons, MessageBoxIcon icon, MessageBoxDefaultButton defaultButton, MessageBoxOptions options)
+        {
+            if (!Program.runSilently)
+            {
+                MessageBox.Show(text, caption, buttons, icon, defaultButton, options);
+            }
+        }
+
+        public int parsePatch(string patchContents)
+        {
+            return patch.parse(patchContents);
+        }
+
+        public int applyPatch()
+        {
+
+            if (String.IsNullOrEmpty(targetFile) || !File.Exists(targetFile))
+            {
+                return Patch.ERR_PATCH_INVALID_DEFFILE;
+            }
+
+            int returnCode = patch.check(targetFile);
+            if (returnCode == Patch.NO_ERR_OK)
+            {
+                returnCode = patch.apply(targetFile, backupCb.Checked);
+            }
+
+            return returnCode;
+        }
+
         private void patchBtn_Click(object sender, EventArgs e)
         {
-            if (targetFile.Length == 0) {
-                MessageBox.Show("No selected File", "TargetFile", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            int returnCode = applyPatch();
+            if (returnCode == Patch.ERR_PATCH_INVALID_DEFFILE) {
+                CallMessageBox("Please select a valid file (file not found or invalid).", "TargetFile", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
-            if (!File.Exists(targetFile)) {
-                MessageBox.Show("File are no Longer Present.", "TargetFile", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            if (patch.check(targetFile) != Patch.NO_ERR_OK) {
-                MessageBox.Show($" Error: {patch.GetLastError}", "PatchCheck", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            if (patch.apply(targetFile, backupCb.Checked) == Patch.NO_ERR_OK) {
-                MessageBox.Show("File Patching success!", "PatchApply status", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (returnCode == Patch.NO_ERR_OK) {
+                CallMessageBox("Driver was patched!", "PatchApply status", MessageBoxButtons.OK, MessageBoxIcon.Information);
             } else {
-                MessageBox.Show($"Patch apply on file failed.\nError: {patch.GetLastError}", "PatchApply", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CallMessageBox($"Failed to apply the patch.\nError: {patch.GetLastError}", "PatchApply", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -337,7 +296,7 @@ namespace ApplyPatch
         }
         private void downloadPatch_TextChanged(object sender, EventArgs e)
         {
-            patchIsGood = false;
+            this.patchIsGood = false;
             this.patchBtn.Enabled = false;
         }
 
@@ -383,7 +342,7 @@ namespace ApplyPatch
 
         private void helpBtn_Click(object sender, EventArgs e)
         {
-            MessageBox.Show(Resource.PatchInstructions,"Instructions",
+            CallMessageBox(Resource.PatchInstructions,"Instructions",
                     MessageBoxButtons.OK, MessageBoxIcon.Information
                 );
         }

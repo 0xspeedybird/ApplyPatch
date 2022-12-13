@@ -97,6 +97,7 @@
     <Compile Include="ApplyPatch.Designer.cs">
       <DependentUpon>ApplyPatch.cs</DependentUpon>
     </Compile>
+    <Compile Include="PatchHelper.cs" />
     <Compile Include="DownloadPageAsyncResult.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="mCheckSum.cs" />
