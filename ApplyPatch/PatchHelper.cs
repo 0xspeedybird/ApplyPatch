@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Management;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace ApplyPatch
@@ -54,6 +55,8 @@ namespace ApplyPatch
             try
             {
                 string downloadContent = await client.GetStringAsync(path);
+                // normalize line endings
+                downloadContent = Regex.Replace(downloadContent, @"\r\n|\n\r|\n|\r", Environment.NewLine);
                 result.result = downloadContent;
             }
             catch (Exception ex)
