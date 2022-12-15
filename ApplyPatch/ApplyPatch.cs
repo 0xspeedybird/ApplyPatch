@@ -284,6 +284,8 @@ namespace ApplyPatch
 
             if (returnCode == Patch.NO_ERR_OK) {
                 CallMessageBox("Driver was patched!", "PatchApply status", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            } else if(returnCode == Patch.ERR_CHECK_ALREADY) {
+                CallMessageBox("No action taken.  A previous patch was detected.", "PatchApply status", MessageBoxButtons.OK, MessageBoxIcon.Information);
             } else {
                 CallMessageBox($"Failed to apply the patch.\nError: {patch.GetLastError}", "PatchApply", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
