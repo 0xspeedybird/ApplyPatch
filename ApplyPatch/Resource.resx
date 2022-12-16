@@ -131,11 +131,11 @@ Steps to patch:
 Any incomplete step will disable the subsequent steps.
 
 1) Browse for Nvidia DLL
-a. This can usually be found here: C:\Windows\System32\nvEncodeAPI64.dll
+a. This can usually be found at C:\Windows\System32\nvEncodeAPI64.dll
 
 2) Download Patch 
 a. Find your driver version by opening the Nvidia Control Panel.
-b. Go to https://github.com/keylase/nvidia-patch/tree/master/win, press ctrl+F to open a search, and search for your driver version. 
+b. Go to the Github project nvidia-patch by keylase and search for your driver version within the project. 
 c. Right click on the corresponding library patch, click copy link address and paste that into the URL field.
 d. Click Download Patch
 

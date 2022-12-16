@@ -80,10 +80,10 @@ namespace ApplyPatch {
         ///Any incomplete step will disable the subsequent steps.
         ///
         ///1) Browse for Nvidia DLL
-        ///a. This can usually be found here: C:\Windows\System32\nvEncodeAPI64.dll
+        ///a. This can usually be found at C:\Windows\System32\nvEncodeAPI64.dll
         ///
         ///2) Download Patch 
-        ///a. Find your driver version by op [rest of string was truncated]&quot;;.
+        ///a. Find your driver version by openi [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string PatchInstructions {
             get {

@@ -10,7 +10,9 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
+using static System.Windows.Forms.LinkLabel;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolTip;
 
 namespace ApplyPatch
 {
@@ -123,7 +125,7 @@ namespace ApplyPatch
             if (downloadTask.result == null || parsePatch(downloadTask.result) != Patch.NO_ERR_OK)
             {
                 CallMessageBox(
-                    String.Format("The downloaded .1337 patch is invalid.  You may to review which driver versions are supported by the keylase project as your currently installed version may not be supported.  Note that the driver patch link must be the direct link to the RAW file.\n\nYou entered:\n\n{0}\n\nHere's a example of a valid URL:\n\nhttps://raw.githubusercontent.com/keylase/nvidia-patch/master/win/win10_x64/512.77/nvencodeapi64.1337 \n\n{1}", patchDownloadUrl, patch.GetLastError),
+                    String.Format("The patching application tried to automatically download the correct .1337 patch file but encountered an issue. This may be because you're using a Studio driver.{0}{1}To fix, close this window, then click \"Show Instructions\" and follow the steps to manually download the correct patch file.", Environment.NewLine, Environment.NewLine),
                     "Download Patch Status",
                     MessageBoxButtons.OK, MessageBoxIcon.Error
                 );
